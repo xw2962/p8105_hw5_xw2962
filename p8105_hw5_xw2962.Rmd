@@ -206,6 +206,7 @@ power_and_estimates = simulation_results |>
 ```
 
 #### Make a plot showing the the power of the test on the y axis and the true value of μ on the x axis. 
+
 ```{r}
 ggplot(power_and_estimates, aes(x = true_mu, y = power)) +
   geom_point() +
@@ -215,9 +216,11 @@ ggplot(power_and_estimates, aes(x = true_mu, y = power)) +
 ```
 
 #### Description. 
+
 As the true mean μ increases (thus increasing the effect size), the power of the test also increases. This happens because as the true mean deviates more from the null hypothesis mean (μ=0 in this case), it becomes easier for the t-test to detect a significant difference, thus increasing the likelihood of rejecting the null hypothesis when it is indeed false.
 
 #### Make a plot showing the average estimate of μ̂  on the y axis and the true value of μ on the x axis.
+
 ```{r}
 ggplot(power_and_estimates, aes(x = true_mu, y = average_mu_hat)) +
   geom_point() +
@@ -227,6 +230,7 @@ ggplot(power_and_estimates, aes(x = true_mu, y = average_mu_hat)) +
 ```
 
 #### Make a second plot (or overlay on the first) the average estimate of μ̂  only in samples for which the null was rejected on the y axis and the true value of μ on the x axis.
+
 ```{r}
 average_estimates = simulation_results  |> 
   group_by(true_mu)  |> 
