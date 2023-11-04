@@ -13,7 +13,7 @@ library(rvest)
 library(purrr)
 library(broom)
 library(tidyr)
-set.seed(1)
+library(ggplot2)
 ```
 
 ## Problem One 
@@ -44,6 +44,7 @@ city_summary=
 # summarize within cities to obtain the number of unsolved homicides
   ungroup() 
 ```
+
 #### Estimate the Proportion of Homicides that are Unsolved for Baltimore 
 ```{r}
 baltimore_df <- homicide_df  |>
@@ -61,6 +62,7 @@ conf_low = tidy_result$conf.low
 conf_high = tidy_result$conf.high
 # pull the estimated proportion and confidence intervals from the resulting tidy dataframe
 ```
+
 #### Run prop.test for each City
 ```{r}
 city_prop_test_results = city_summary  |> 
@@ -76,6 +78,7 @@ city_prop_test_results = city_summary  |>
 print(city_prop_test_results)
 # print the resulted dataframe 
 ```
+
 #### Create a Plot that Shows the Estimates and CIs for each City 
 ```{r}
 ggplot(city_prop_test_results, aes(x = reorder(city, estimate), y = estimate)) +
@@ -101,6 +104,7 @@ data_path = "./data/problem_2_data/"
 file_names = list.files(path = data_path, full.names = TRUE)
 # create a dataframe of all file names
 ```
+
 #### Iterate over File Names and Read in Data for each Subject
 ```{r, message=FALSE}
 files_df = data.frame(file_path = file_names) |>
@@ -120,14 +124,16 @@ files_df = files_df |>
   mutate(data = map(file_path, read_data))
 # map all files to the function created 
 ``` 
+
 #### Tidy the Result
 ```{r, message=FALSE}
-tidy_df = files_df %>%
-  select(-file_path, -file_name) %>%
+tidy_df = files_df  |> 
+  select(-file_path, -file_name)  |> 
   unnest(data) |> 
   mutate(week = as.numeric(gsub("week_", "", week)))
 # tidy the resulting dataset 
 ```
+
 #### Make a Spaghetti Plot
 ```{r}
 spaghetti_plot = ggplot(tidy_df, aes(x = week, y = observation, group = subject_id)) +
@@ -145,5 +151,101 @@ spaghetti_plot = ggplot(tidy_df, aes(x = week, y = observation, group = subject_
 print(spaghetti_plot)
 # print result 
 ```
+
 #### Comments on Differences between Groups
 Unlike the control group, the experimental group's subjects have observation values increasing overtime and have a clear increasing trend. The observation values for control group fluctuate between -2 and 4. Whereas, the observation values for experimental group increase from 0 to around 8. 
+
+## Problem Three 
+
+#### Simulation 
+```{r}
+# Set the design elements
+n = 30          
+# Sample size
+sigma = 5       
+# Standard deviation
+mu_values = 0:6 
+# True mean values under the alternative hypothesis
+num_datasets = 5000  
+# Number of datasets to generate
+alpha = 0.05        
+# Significance level
+
+simulation_results = list()
+# Create an empty list to store the results
+
+for (mu in mu_values) {
+  datasets = replicate(num_datasets, {
+    sample_data = rnorm(n, mean = mu, sd = sigma)
+    t_test_result = t.test(sample_data, mu = 0)
+    tidy(t_test_result)[, c("estimate", "p.value")]
+  }, simplify = FALSE)  |> 
+# Use replicate to generate n_datasets data frames and combine them into a list
+    bind_rows()  |>
+# Convert the list of tibbles into one tibble
+    rename(mu_hat = estimate, p_value = p.value)  |> 
+# Name the columns correctly
+    mutate(true_mu = mu, rejected = p_value < alpha)
+# Add the true mu value and a rejection indicator
+  
+simulation_results[[as.character(mu)]] = datasets
+}
+# Add the results to the main list
+
+simulation_results = bind_rows(simulation_results, .id = "true_mu")  |> 
+  mutate(true_mu = as.numeric(true_mu))
+# Combine all the results into one tibble
+
+power_and_estimates = simulation_results |>
+  group_by(true_mu)  |> 
+  summarise(
+    power = mean(rejected),
+    average_mu_hat = mean(mu_hat)
+  )
+# Calculate power and average estimates
+```
+
+#### Make a plot showing the the power of the test on the y axis and the true value of μ on the x axis. 
+```{r}
+ggplot(power_and_estimates, aes(x = true_mu, y = power)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "True value of μ", y = "Power of the test", title = "Power vs. True value of μ") +
+  theme_minimal()
+```
+
+#### Description. 
+As the true mean μ increases (thus increasing the effect size), the power of the test also increases. This happens because as the true mean deviates more from the null hypothesis mean (μ=0 in this case), it becomes easier for the t-test to detect a significant difference, thus increasing the likelihood of rejecting the null hypothesis when it is indeed false.
+
+#### Make a plot showing the average estimate of μ̂  on the y axis and the true value of μ on the x axis.
+```{r}
+ggplot(power_and_estimates, aes(x = true_mu, y = average_mu_hat)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "True value of μ", y = "Average estimate of μ̂", title = "Average estimate of μ̂ vs. True value of μ") +
+  theme_minimal()
+```
+
+#### Make a second plot (or overlay on the first) the average estimate of μ̂  only in samples for which the null was rejected on the y axis and the true value of μ on the x axis.
+```{r}
+average_estimates = simulation_results  |> 
+  group_by(true_mu)  |> 
+  summarise(
+    average_mu_hat = mean(mu_hat),
+    average_mu_hat_rejected = mean(mu_hat[rejected])
+  )
+# Calculate the average mu_hat and average mu_hat when null is rejected
+
+ggplot(average_estimates, aes(x = true_mu)) +
+  geom_line(aes(y = average_mu_hat), color = 'blue') +
+  geom_line(aes(y = average_mu_hat_rejected), color = 'red', linetype = "dashed") +
+  geom_point(aes(y = average_mu_hat), color = 'blue') +
+  geom_point(aes(y = average_mu_hat_rejected), color = 'red', shape = 1) +
+  labs(x = "True value of μ", y = "Average estimate of μ̂",
+       title = "Average Estimates of μ̂ vs. True Value of μ")
+# Plot the power of the test and the average estimates of μ̂
+```
+
+#### Discussion
+
+No, the sample average of μ^. across tests for which the null is rejected is not always approximately equal to the true value of μ. This discrepancy is because when the null hypothesis is true (or the true effect is very small), rejecting the null hypothesis is often a result of sampling variability that leads to an overestimation of the true effect size.
