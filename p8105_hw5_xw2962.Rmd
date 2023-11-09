@@ -35,7 +35,7 @@ city_summary=
   mutate(city_state = paste(city, state, sep = ", "),
 # create a city_state variable
          unsolved = disposition %in% c('Closed without arrest', 'Open/No arrest')) |> 
-  group_by(city) |> 
+  group_by(city_state) |> 
   summarise(
     total_homicides = n(),
 # summarize within cities to obtain the total number of homicides
@@ -43,11 +43,13 @@ city_summary=
   ) |> 
 # summarize within cities to obtain the number of unsolved homicides
   ungroup() 
+city_summary=city_summary[city_summary$city_state!="Tulsa, AL",]
+city_summary
 ```
 
 #### Estimate the Proportion of Homicides that are Unsolved for Baltimore 
 ```{r}
-baltimore_df <- homicide_df  |>
+baltimore_df = homicide_df  |>
   mutate(city_state = paste(city, state, sep = ", ")) |>
   filter(city_state == "Baltimore, MD")
 # filter for Baltimore, MD
@@ -58,8 +60,11 @@ prop_test_result = prop.test(x = sum(baltimore_df$disposition %in% c("Closed wit
 tidy_result = broom::tidy(prop_test_result)
 # save the output and apply broom::tidy to get a tidy dataframe
 estimated_proportion = tidy_result$estimate
+estimated_proportion
 conf_low = tidy_result$conf.low
+conf_low
 conf_high = tidy_result$conf.high
+conf_high
 # pull the estimated proportion and confidence intervals from the resulting tidy dataframe
 ```
 
@@ -71,7 +76,7 @@ city_prop_test_results = city_summary  |>
 # run prop.test for each of the cities in your dataset
     tidy_result = map(prop_test_result, broom::tidy)
   ) |>
-  select(city, tidy_result) |>
+  select(city_state, tidy_result) |>
   unnest(tidy_result) |>
   select(-statistic, -p.value,-parameter, -method, -alternative) 
 # create a tidy dataframe with estimated proportions and CIs for each city
@@ -81,7 +86,7 @@ print(city_prop_test_results)
 
 #### Create a Plot that Shows the Estimates and CIs for each City 
 ```{r}
-ggplot(city_prop_test_results, aes(x = reorder(city, estimate), y = estimate)) +
+ggplot(city_prop_test_results, aes(x = reorder(city_state, estimate), y = estimate)) +
   geom_point() +
 # create a point plot that shows the estimates and CIs for each city and organize cities according to the proportion of unsolved homicides.
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
@@ -132,12 +137,14 @@ tidy_df = files_df  |>
   unnest(data) |> 
   mutate(week = as.numeric(gsub("week_", "", week)))
 # tidy the resulting dataset 
+tidy_df
 ```
 
 #### Make a Spaghetti Plot
 ```{r}
-spaghetti_plot = ggplot(tidy_df, aes(x = week, y = observation, group = subject_id)) +
-  geom_line(aes(color = arm), alpha = 0.4) +
+spaghetti_plot = ggplot(tidy_df, aes(x = week, y = observation, color = subject_id)) +
+  geom_line() +
+  geom_point()+
 # make a Spaghetti Plot and set the transparency level to 0.4 
   facet_wrap(~ arm, scales = 'free_y') +  
 # Separating the groups into different arms 
@@ -145,7 +152,7 @@ spaghetti_plot = ggplot(tidy_df, aes(x = week, y = observation, group = subject_
   labs(title = "Observations Over Time by Subject and Group",
        x = "Week",
        y = "Observation",
-       color = "Group") +
+       color = "subject_id") +
 # add title and axis labels 
   theme(legend.position = "bottom")
 print(spaghetti_plot)
@@ -196,6 +203,8 @@ simulation_results = bind_rows(simulation_results, .id = "true_mu")  |>
   mutate(true_mu = as.numeric(true_mu))
 # Combine all the results into one tibble
 
+print(simulation_results)
+
 power_and_estimates = simulation_results |>
   group_by(true_mu)  |> 
   summarise(
@@ -203,6 +212,7 @@ power_and_estimates = simulation_results |>
     average_mu_hat = mean(mu_hat)
   )
 # Calculate power and average estimates
+print(power_and_estimates)
 ```
 
 #### Make a plot showing the the power of the test on the y axis and the true value of μ on the x axis. 
