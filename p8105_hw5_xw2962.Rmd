@@ -262,4 +262,4 @@ ggplot(average_estimates, aes(x = true_mu)) +
 
 #### Discussion
 
-No, the sample average of μ^. across tests for which the null is rejected is not always approximately equal to the true value of μ. This discrepancy is because when the null hypothesis is true (or the true effect is very small), rejecting the null hypothesis is often a result of sampling variability that leads to an overestimation of the true effect size.
+No, the sample average of μ^. across tests for which the null is rejected is not always approximately equal to the true value of μ. This discrepancy is because when the null hypothesis is true (or the true effect is very small), rejecting the null hypothesis is often a result of sampling variability that leads to an overestimation of the true effect size. This could be due to a Type II error, which occurs when a false null hypothesis is not rejected. As the true mean (μ) increases, the rate of Type II error decreases, enhancing the test's power. This results in a greater likelihood of rejecting the null hypothesis and yields a more precise estimation of the μ value.
