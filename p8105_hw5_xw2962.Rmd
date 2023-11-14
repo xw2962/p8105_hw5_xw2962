@@ -239,6 +239,10 @@ ggplot(power_and_estimates, aes(x = true_mu, y = average_mu_hat)) +
   theme_minimal()
 ```
 
+#### Description.
+
+The analysis indicates that the average estimated mean closely corresponds to the true mean, conforming to a relationship that can be most accurately described by the linear equation y=x.
+
 #### Make a second plot (or overlay on the first) the average estimate of μ̂  only in samples for which the null was rejected on the y axis and the true value of μ on the x axis.
 
 ```{r}
