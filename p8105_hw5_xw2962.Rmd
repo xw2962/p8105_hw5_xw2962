@@ -160,7 +160,7 @@ print(spaghetti_plot)
 ```
 
 #### Comments on Differences between Groups
-Unlike the control group, the experimental group's subjects have observation values increasing overtime and have a clear increasing trend. The observation values for control group fluctuate between -2 and 4. Whereas, the observation values for experimental group increase from 0 to around 8. 
+Unlike the control group, the experimental group's subjects have observation values increasing overtime and have a clear increasing trend. The observation values for control group fluctuate between -2 and 4. Whereas, the observation values for experimental group increase from 0 to around 8. And compared to control group, the mean values of observations of each subject are higher in experimental group.
 
 ## Problem Three 
 
